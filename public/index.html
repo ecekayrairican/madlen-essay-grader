@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Essay Grader</title>
+<style>
+  :root {
+    --amber: #C96A2E;
+    --amber-light: #F5EBE0;
+    --ink: #2B2620;
+    --muted: #6B6259;
+    --border: #E6DCCB;
+    --bg: #FBF7F0;
+    --good: #3F7D4F;
+    --mid: #C98A2E;
+    --low: #B24A3E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 26px; font-weight: 700; margin: 0 0 6px; }
+  header p { color: var(--muted); font-size: 15px; margin: 0; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .field { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: inherit;
+  }
+  textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
+  select:focus, textarea:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+  button {
+    width: 100%;
+    padding: 14px;
+    background: var(--amber);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  button:hover { background: #B25A22; }
+  button:disabled { background: #D8CBB8; cursor: not-allowed; }
+  .error {
+    background: #FBEAEA;
+    color: #A32D2D;
+    border: 1px solid #F0C7C7;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-top: 16px;
+    display: none;
+  }
+  .loading { text-align: center; padding: 20px; color: var(--muted); font-size: 14px; display: none; }
+  #results { margin-top: 24px; display: none; }
+  .section { margin-bottom: 22px; }
+  .section h2 {
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--amber);
+    margin: 0 0 14px;
+  }
+  .criterion {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .criterion:last-child { border-bottom: none; }
+  .criterion-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .criterion-comment { font-size: 13px; color: var(--muted); line-height: 1.4; }
+  .score-badge {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .score-4, .score-3 { background: var(--good); }
+  .score-2 { background: var(--mid); }
+  .score-1 { background: var(--low); }
+
+  .feedback-item {
+    background: var(--amber-light);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .feedback-quote {
+    font-style: italic;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .feedback-comment { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+  .summary-box {
+    background: var(--amber-light);
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .copy-btn {
+    background: transparent;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    width: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+    margin-top: 10px;
+  }
+  .copy-btn:hover { background: var(--amber-light); }
+  footer { text-align: center; margin-top: 40px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Essay Grader</h1>
+    <p>Öğrenci denemesini yapıştır, yapılandırılmış geri bildirim al.</p>
+  </header>
+
+  <div class="card">
+    <div class="field">
+      <label for="grade">Sınıf Seviyesi (isteğe bağlı)</label>
+      <select id="grade">
+        <option value="">Belirtilmedi</option>
+        <option value="5th grade">5. Sınıf</option>
+        <option value="6th grade">6. Sınıf</option>
+        <option value="7th grade">7. Sınıf</option>
+        <option value="8th grade">8. Sınıf</option>
+        <option value="9th grade">9. Sınıf</option>
+        <option value="10th grade">10. Sınıf</option>
+        <option value="11th grade">11. Sınıf</option>
+        <option value="12th grade">12. Sınıf</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="essay">Öğrenci Denemesi</label>
+      <textarea id="essay" placeholder="Denemeyi buraya yapıştır..."></textarea>
+    </div>
+    <button id="gradeBtn">Değerlendir</button>
+    <div class="error" id="errorBox"></div>
+    <div class="loading" id="loadingBox">Deneme değerlendiriliyor...</div>
+  </div>
+
+  <div id="results">
+    <div class="card section">
+      <h2>Puanlama</h2>
+      <div id="criteriaList"></div>
+    </div>
+    <div class="card section">
+      <h2>Satır İçi Geri Bildirim</h2>
+      <div id="feedbackList"></div>
+    </div>
+    <div class="card section">
+      <h2>Öğrenciyle Paylaşılacak Özet</h2>
+      <div class="summary-box" id="summaryBox"></div>
+      <button class="copy-btn" id="copyBtn">Özeti Kopyala</button>
+    </div>
+  </div>
+
+  <footer>Madlen Case Study — Essay Grader</footer>
+</div>
+
+<script>
+const btn = document.getElementById('gradeBtn');
+const errorBox = document.getElementById('errorBox');
+const loadingBox = document.getElementById('loadingBox');
+const results = document.getElementById('results');
+
+btn.addEventListener('click', async () => {
+  const essayText = document.getElementById('essay').value.trim();
+  const gradeLevel = document.getElementById('grade').value;
+
+  errorBox.style.display = 'none';
+  results.style.display = 'none';
+
+  if (essayText.length < 20) {
+    errorBox.textContent = 'Lütfen daha uzun bir deneme yapıştır.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  loadingBox.style.display = 'block';
+
+  try {
+    const res = await fetch('/api/grade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ essayText, gradeLevel }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Bir hata oluştu.');
+    }
+
+    renderResults(data);
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    loadingBox.style.display = 'none';
+  }
+});
+
+function renderResults(data) {
+  const criteriaList = document.getElementById('criteriaList');
+  const feedbackList = document.getElementById('feedbackList');
+  const summaryBox = document.getElementById('summaryBox');
+
+  criteriaList.innerHTML = (data.criteria || []).map(c => `
+    <div class="criterion">
+      <div>
+        <div class="criterion-name">${escapeHtml(c.name || '')}</div>
+        <div class="criterion-comment">${escapeHtml(c.comment || '')}</div>
+      </div>
+      <div class="score-badge score-${c.score}">${c.score} / ${c.maxScore}</div>
+    </div>
+  `).join('');
+
+  feedbackList.innerHTML = (data.inlineFeedback || []).map(f => `
+    <div class="feedback-item">
+      <div class="feedback-quote">"${escapeHtml(f.quote || '')}"</div>
+      <div class="feedback-comment">${escapeHtml(f.comment || '')}</div>
+    </div>
+  `).join('');
+
+  summaryBox.textContent = data.summaryForStudent || '';
+
+  results.style.display = 'block';
+}
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const text = document.getElementById('summaryBox').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Kopyalandı!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+});
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
